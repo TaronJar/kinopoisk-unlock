@@ -89,35 +89,33 @@
             gap: '8px',
             padding: '0 20px',
             height: '52px',
-            backgroundColor: 'transparent',
+            backgroundColor: '#f5f5f5',
             color: '#1a1a1a',
-            border: '1px solid #e0e0e0',
+            border: 'none',
             borderRadius: '26px',
             cursor: 'pointer',
             fontWeight: '500',
             fontSize: '16px',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            transition: 'background-color 0.2s, border-color 0.2s',
+            transition: 'transform 0.2s ease, background-color 0.2s ease',
             lineHeight: '1',
             whiteSpace: 'nowrap',
             opacity: '0',
-            transform: 'translateY(4px)',
+            transform: 'translateY(4px) scale(1)',
             boxSizing: 'border-box',
         });
 
         // Плавное появление
         requestAnimationFrame(() => {
             btn.style.opacity = '1';
-            btn.style.transform = 'translateY(0)';
+            btn.style.transform = 'translateY(0) scale(1)';
         });
 
         btn.onmouseover = () => {
-            btn.style.backgroundColor = '#f5f5f5';
-            btn.style.borderColor = '#cccccc';
+            btn.style.transform = 'scale(1.03)';
         };
         btn.onmouseout = () => {
-            btn.style.backgroundColor = 'transparent';
-            btn.style.borderColor = '#e0e0e0';
+            btn.style.transform = 'scale(1)';
         };
 
         btn.onclick = () => {

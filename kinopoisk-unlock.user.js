@@ -166,7 +166,7 @@
         const btnWrap = target.closest('.styles_button__bW_ew') || target.parentElement;
         if (btnWrap) {
             const newWrap = document.createElement('div');
-            newWrap.className = 'styles_button__bW_ew';
+            newWrap.style.display = 'inline';
             newWrap.appendChild(btn);
             btnWrap.parentElement.insertBefore(newWrap, btnWrap.nextSibling);
         } else {

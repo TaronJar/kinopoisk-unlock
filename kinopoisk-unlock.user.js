@@ -7,6 +7,8 @@
 // @match        https://www.kinopoisk.ru/*
 // @match        https://hd.kinopoisk.ru/*
 // @icon         https://www.kinopoisk.ru/favicon.ico
+// @updateURL    https://github.com/TaronJar/kinopoisk-unlock/raw/main/kinopoisk-unlock.user.js
+// @downloadURL  https://github.com/TaronJar/kinopoisk-unlock/raw/main/kinopoisk-unlock.user.js
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==

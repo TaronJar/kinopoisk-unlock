@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Кинопоиск Быстрый Переход",
+  "version": "2.1",
+  "description": "Добавляет кнопку просмотра прямо на страницы фильмов и сериалов Кинопоиска.",
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.kinopoisk.ru/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

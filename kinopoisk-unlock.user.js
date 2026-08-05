@@ -59,8 +59,8 @@
             } catch (e) {
                 logger.warn('Не удалось извлечь ID из __NEXT_DATA__:', e);
             }
-            // Фоллбэк — ID из URL (hex)
-            const hexMatch = url.match(/\/([a-f0-9]{24})/);
+            // Фоллбэк — ID из URL (hex, 24 или 32 символа)
+            const hexMatch = url.match(/\/([a-f0-9]{20,32})/);
             if (hexMatch) return hexMatch[1];
         }
 

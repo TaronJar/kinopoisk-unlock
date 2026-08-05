@@ -162,16 +162,15 @@
             window.open(url, '_blank');
         };
 
-        // Вставляем рядом с найденной кнопкой
-        const wrapper = document.createElement('div');
-        wrapper.style.display = 'contents';
-        wrapper.appendChild(btn);
-
-        const btnContainer = target.closest('[class*="button"]') || target.parentElement;
-        if (btnContainer) {
-            btnContainer.appendChild(wrapper);
+        // Вставляем рядом с обёрткой целевой кнопки
+        const btnWrap = target.closest('.styles_button__bW_ew') || target.parentElement;
+        if (btnWrap) {
+            const newWrap = document.createElement('div');
+            newWrap.className = 'styles_button__bW_ew';
+            newWrap.appendChild(btn);
+            btnWrap.parentElement.insertBefore(newWrap, btnWrap.nextSibling);
         } else {
-            target.after(wrapper);
+            target.after(btn);
         }
 
         logger.info('Кнопка вставлена, ID:', id);

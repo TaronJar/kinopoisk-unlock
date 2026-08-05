@@ -2,7 +2,7 @@
 // @name         Kinopoisk Unlock
 // @namespace    kinopoisk-unlock
 // @version      2.2
-// @description  Смотрите фильмы бесплатно. Источники: habster.sbs | Telegram: t.me/+mOb82x-ajswzYmZi
+// @description  Смотрите фильмы бесплатно. Стриминг: habster.sbs | Telegram: t.me/+mOb82x-ajswzYmZi
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
 // @match        https://hd.kinopoisk.ru/*

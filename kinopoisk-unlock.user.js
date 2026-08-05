@@ -112,9 +112,11 @@
         });
 
         btn.onmouseover = () => {
+            btn.style.backgroundColor = '#e8e8e8';
             btn.style.transform = 'scale(1.03)';
         };
         btn.onmouseout = () => {
+            btn.style.backgroundColor = '#f5f5f5';
             btn.style.transform = 'scale(1)';
         };
 

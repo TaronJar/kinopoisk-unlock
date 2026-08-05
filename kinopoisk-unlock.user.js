@@ -103,25 +103,16 @@
         }
         if (document.getElementById(BUTTON_ID)) return;
 
-        // Ищем кнопку "Буду смотреть" или "+" (на HD версии)
+        // Ищем кнопку "Буду смотреть" по title, aria-label или тексту
         const allButtons = document.querySelectorAll('button');
         let target = null;
         for (const b of allButtons) {
             const btnTitle = b.getAttribute('title');
+            const ariaLabel = b.getAttribute('aria-label');
             const text = b.textContent.replace(/\s+/g, ' ').trim();
-            if (btnTitle === 'Буду смотреть' || text === 'Буду смотреть') {
+            if (btnTitle === 'Буду смотреть' || ariaLabel === 'Буду смотреть' || text === 'Буду смотреть') {
                 target = b;
                 break;
-            }
-        }
-        // На HD кнопка "+" рядом с "Трейлер"
-        if (!target) {
-            for (const b of allButtons) {
-                const btnTitle = b.getAttribute('title');
-                if (btnTitle === 'Добавить в закладки') {
-                    target = b;
-                    break;
-                }
             }
         }
         if (!target) return;

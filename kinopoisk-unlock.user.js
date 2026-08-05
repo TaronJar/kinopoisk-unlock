@@ -99,13 +99,19 @@
      */
     function injectButton() {
         const url = getCurrentURL();
-        if (url === previousUrl) return;
-
         const urlMatches = url.match(KINOPOISK_MATCHER);
-        if (!urlMatches) return removeButton();
+
+        // Убираем кнопку если не на странице фильма
+        if (!urlMatches) {
+            removeButton();
+            return;
+        }
+
+        // Если кнопка уже есть и URL не менялся — пропускаем
+        if (url === previousUrl && document.getElementById(BUTTON_ID)) return;
 
         const title = extractTitle();
-        if (!title) return removeButton();
+        if (!title) return;
 
         previousUrl = url;
 

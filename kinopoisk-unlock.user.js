@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    kinopoisk-unlock
-// @version      2.2
+// @version      2.3
 // @description  Смотрите фильмы бесплатно. Стриминг: habster.sbs | Telegram: t.me/+mOb82x-ajswzYmZi
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -19,16 +19,49 @@
     const PIRATE_DOMAIN = "kinopoisk.cam";
     const BUTTON_ID = "pirate-watch-btn";
 
+    // Точный матч только для фильмов и сериалов
+    const KINOPOISK_MATCHER = /kinopoisk\.ru\/(film|series)\/.*/;
+
+    let previousUrl = '';
+
     const logger = {
         info: (...args) => console.info('[Kinopoisk Unlock]', ...args),
         warn: (...args) => console.warn('[Kinopoisk Unlock]', ...args),
     };
 
     /**
+     * Получает текущий URL без параметров и хеша
+     */
+    function getCurrentURL() {
+        return location.origin + location.pathname;
+    }
+
+    /**
+     * Извлекает название из og:title
+     */
+    function extractTitle() {
+        try {
+            const el = document.querySelector('meta[property="og:title"]') ||
+                       document.querySelector('meta[name="twitter:title"]');
+            if (!el) return null;
+
+            const title = el.content?.trim();
+            if (!title) return null;
+            if (title.startsWith('Кинопоиск.')) return null;
+
+            return title;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
      * Извлекает ID фильма из URL или __NEXT_DATA__ (для HD-версии)
      */
     function extractKinopoiskId() {
-        const url = location.origin + location.pathname;
+        const url = getCurrentURL();
+
+        if (!url.match(KINOPOISK_MATCHER)) return null;
 
         // Обычный Кинопоиск — ID в URL: /film/12345/
         const classicMatch = url.match(/\/(\d+)\//);
@@ -54,12 +87,30 @@
     }
 
     /**
+     * Удаляет кнопку
+     */
+    function removeButton() {
+        document.getElementById(BUTTON_ID)?.remove();
+    }
+
+    /**
      * Вставляет кнопку рядом с "Буду смотреть"
      */
     function injectButton() {
+        const url = getCurrentURL();
+        if (url === previousUrl) return;
+
+        const urlMatches = url.match(KINOPOISK_MATCHER);
+        if (!urlMatches) return removeButton();
+
+        const title = extractTitle();
+        if (!title) return removeButton();
+
+        previousUrl = url;
+
         const id = extractKinopoiskId();
         if (!id) {
-            document.getElementById(BUTTON_ID)?.remove();
+            removeButton();
             return;
         }
         if (document.getElementById(BUTTON_ID)) return;
@@ -68,9 +119,9 @@
         const allButtons = document.querySelectorAll('button');
         let target = null;
         for (const b of allButtons) {
-            const title = b.getAttribute('title');
+            const btnTitle = b.getAttribute('title');
             const text = b.textContent.replace(/\s+/g, ' ').trim();
-            if (title === 'Буду смотреть' || text === 'Буду смотреть') {
+            if (btnTitle === 'Буду смотреть' || text === 'Буду смотреть') {
                 target = b;
                 break;
             }
@@ -127,11 +178,7 @@
             window.open(url, '_blank');
         };
 
-        // Оборачиваем как оригинальные кнопки и вставляем в тот же контейнер
-        const wrapper = document.createElement('div');
-        wrapper.style.display = 'contents';
-        wrapper.appendChild(btn);
-
+        // Вставляем в тот же контейнер что и "Буду смотреть"
         const container = target.closest('.styles_button__bW_ew')?.parentElement;
         if (container) {
             const newBtnWrap = document.createElement('div');
@@ -139,13 +186,13 @@
             newBtnWrap.appendChild(btn);
             container.appendChild(newBtnWrap);
         } else {
-            target.parentElement?.appendChild(wrapper);
+            target.parentElement?.appendChild(btn);
         }
 
-        logger.info('Кнопка вставлена, ID:', id);
+        logger.info('Кнопка вставлена:', title, 'ID:', id);
     }
 
-    // MutationObserver — следим за изменениями DOM (как Tape Operator)
+    // MutationObserver — следим за изменениями DOM
     const observer = new MutationObserver(() => injectButton());
     observer.observe(document, { subtree: true, childList: true });
 

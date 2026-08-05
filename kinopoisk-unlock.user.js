@@ -129,6 +129,7 @@
             gap: '8px',
             padding: '0 22px',
             height: '52px',
+            marginLeft: '12px',
             backgroundColor: 'rgba(0,0,0,0.05)',
             color: '#000',
             border: 'none',

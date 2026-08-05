@@ -45,10 +45,6 @@
 
         if (!url.match(KINOPOISK_MATCHER)) return null;
 
-        // Обычный Кинопоиск — ID в URL: /film/12345/
-        const classicMatch = url.match(/\/(\d+)\//);
-        if (classicMatch) return classicMatch[1];
-
         // Kinopoisk HD — ID в JSON-данных страницы
         if (location.hostname === 'hd.kinopoisk.ru') {
             try {
@@ -63,7 +59,14 @@
             } catch (e) {
                 logger.warn('Не удалось извлечь ID из __NEXT_DATA__:', e);
             }
+            // Фоллбэк — ID из URL (hex)
+            const hexMatch = url.match(/\/([a-f0-9]{24})/);
+            if (hexMatch) return hexMatch[1];
         }
+
+        // Обычный Кинопоиск — ID в URL: /film/12345/
+        const classicMatch = url.match(/\/(\d+)\//);
+        if (classicMatch) return classicMatch[1];
 
         return null;
     }
@@ -100,7 +103,7 @@
         }
         if (document.getElementById(BUTTON_ID)) return;
 
-        // Ищем кнопку "Буду смотреть" по title или тексту
+        // Ищем кнопку "Буду смотреть" или "+" (на HD версии)
         const allButtons = document.querySelectorAll('button');
         let target = null;
         for (const b of allButtons) {
@@ -109,6 +112,16 @@
             if (btnTitle === 'Буду смотреть' || text === 'Буду смотреть') {
                 target = b;
                 break;
+            }
+        }
+        // На HD кнопка "+" рядом с "Трейлер"
+        if (!target) {
+            for (const b of allButtons) {
+                const btnTitle = b.getAttribute('title');
+                if (btnTitle === 'Добавить в закладки') {
+                    target = b;
+                    break;
+                }
             }
         }
         if (!target) return;

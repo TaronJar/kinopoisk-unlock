@@ -64,11 +64,13 @@
         }
         if (document.getElementById(BUTTON_ID)) return;
 
-        // Ищем кнопку "Буду смотреть"
+        // Ищем кнопку "Буду смотреть" по title или тексту
         const allButtons = document.querySelectorAll('button');
         let target = null;
         for (const b of allButtons) {
-            if (b.textContent.trim() === 'Буду смотреть') {
+            const title = b.getAttribute('title');
+            const text = b.textContent.replace(/\s+/g, ' ').trim();
+            if (title === 'Буду смотреть' || text === 'Буду смотреть') {
                 target = b;
                 break;
             }

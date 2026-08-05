@@ -77,7 +77,7 @@
         }
         if (!target) return;
 
-        // Создаём кнопку
+        // Создаём кнопку в стиле Кинопоиска
         const btn = document.createElement('button');
         btn.id = BUTTON_ID;
         btn.textContent = 'Смотреть бесплатно';
@@ -85,22 +85,24 @@
         Object.assign(btn.style, {
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            marginLeft: '8px',
-            backgroundColor: '#ff5c00',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '8px',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '0 20px',
+            height: '52px',
+            backgroundColor: 'transparent',
+            color: '#1a1a1a',
+            border: '1px solid #e0e0e0',
+            borderRadius: '26px',
             cursor: 'pointer',
-            fontWeight: '600',
-            fontSize: '14px',
-            fontFamily: 'YS Text, sans-serif',
-            transition: 'background-color 0.2s, transform 0.15s',
+            fontWeight: '500',
+            fontSize: '16px',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            transition: 'background-color 0.2s, border-color 0.2s',
             lineHeight: '1',
             whiteSpace: 'nowrap',
             opacity: '0',
             transform: 'translateY(4px)',
+            boxSizing: 'border-box',
         });
 
         // Плавное появление
@@ -110,12 +112,12 @@
         });
 
         btn.onmouseover = () => {
-            btn.style.backgroundColor = '#e05200';
-            btn.style.transform = 'scale(1.03)';
+            btn.style.backgroundColor = '#f5f5f5';
+            btn.style.borderColor = '#cccccc';
         };
         btn.onmouseout = () => {
-            btn.style.backgroundColor = '#ff5c00';
-            btn.style.transform = 'scale(1)';
+            btn.style.backgroundColor = 'transparent';
+            btn.style.borderColor = '#e0e0e0';
         };
 
         btn.onclick = () => {
@@ -124,11 +126,19 @@
             window.open(url, '_blank');
         };
 
-        // Вставляем рядом с "Буду смотреть"
-        if (target.parentElement) {
-            target.parentElement.insertBefore(btn, target.nextSibling);
+        // Оборачиваем как оригинальные кнопки и вставляем в тот же контейнер
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'contents';
+        wrapper.appendChild(btn);
+
+        const container = target.closest('.styles_button__bW_ew')?.parentElement;
+        if (container) {
+            const newBtnWrap = document.createElement('div');
+            newBtnWrap.className = 'styles_button__bW_ew';
+            newBtnWrap.appendChild(btn);
+            container.appendChild(newBtnWrap);
         } else {
-            target.after(btn);
+            target.parentElement?.appendChild(wrapper);
         }
 
         logger.info('Кнопка вставлена, ID:', id);

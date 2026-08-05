@@ -87,22 +87,23 @@
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            padding: '0 20px',
+            padding: '0 22px',
             height: '52px',
-            backgroundColor: '#f5f5f5',
-            color: '#1a1a1a',
+            backgroundColor: 'rgba(0,0,0,0.05)',
+            color: '#000',
             border: 'none',
-            borderRadius: '26px',
+            borderRadius: '52px',
             cursor: 'pointer',
-            fontWeight: '500',
+            fontWeight: '600',
             fontSize: '16px',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            transition: 'transform 0.2s ease, background-color 0.2s ease',
+            transition: 'background 0.2s ease, transform 0.2s ease',
             lineHeight: '1',
             whiteSpace: 'nowrap',
             opacity: '0',
             transform: 'translateY(4px) scale(1)',
             boxSizing: 'border-box',
+            outline: 'none',
         });
 
         // Плавное появление
@@ -112,11 +113,11 @@
         });
 
         btn.onmouseover = () => {
-            btn.style.backgroundColor = '#e8e8e8';
-            btn.style.transform = 'scale(1.03)';
+            btn.style.backgroundColor = 'rgba(0,0,0,0.1)';
+            btn.style.transform = 'scale(1.05)';
         };
         btn.onmouseout = () => {
-            btn.style.backgroundColor = '#f5f5f5';
+            btn.style.backgroundColor = 'rgba(0,0,0,0.05)';
             btn.style.transform = 'scale(1)';
         };
 

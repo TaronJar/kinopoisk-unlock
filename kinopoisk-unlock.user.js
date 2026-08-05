@@ -162,13 +162,12 @@
             window.open(url, '_blank');
         };
 
-        // Вставляем рядом с обёрткой целевой кнопки
-        const btnWrap = target.closest('.styles_button__bW_ew') || target.parentElement;
-        if (btnWrap) {
-            const newWrap = document.createElement('div');
-            newWrap.style.display = 'inline';
-            newWrap.appendChild(btn);
-            btnWrap.parentElement.insertBefore(newWrap, btnWrap.nextSibling);
+        // Вставляем внутрь контейнера кнопок
+        const buttonsContainer = document.querySelector('[data-tid="ContentActions"] .styles_buttons__IoJ0k') ||
+                                  target.closest('.styles_buttons__IoJ0k') ||
+                                  target.closest('[class*="buttons"]');
+        if (buttonsContainer) {
+            buttonsContainer.appendChild(btn);
         } else {
             target.after(btn);
         }

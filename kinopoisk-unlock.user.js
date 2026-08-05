@@ -20,8 +20,8 @@
     const PIRATE_DOMAIN = "kinopoisk.cam";
     const BUTTON_ID = "pirate-watch-btn";
 
-    // Точный матч только для фильмов и сериалов
-    const KINOPOISK_MATCHER = /kinopoisk\.ru\/(film|series)\/.*/;
+    // Матчер — ловит film, series, anime и другие страницы с ID
+    const KINOPOISK_MATCHER = /kinopoisk\.ru\/(film|series|anime|media|person)\/.*/;
 
     let previousUrl = '';
 
@@ -149,16 +149,10 @@
             transition: 'background 0.2s ease, transform 0.2s ease',
             lineHeight: '1',
             whiteSpace: 'nowrap',
-            opacity: '0',
-            transform: 'translateY(4px) scale(1)',
+            opacity: '1',
+            transform: 'translateY(0) scale(1)',
             boxSizing: 'border-box',
             outline: 'none',
-        });
-
-        // Плавное появление
-        requestAnimationFrame(() => {
-            btn.style.opacity = '1';
-            btn.style.transform = 'translateY(0) scale(1)';
         });
 
         btn.onmouseover = () => {

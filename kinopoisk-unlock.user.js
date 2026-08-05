@@ -176,15 +176,16 @@
             window.open(url, '_blank');
         };
 
-        // Вставляем в тот же контейнер что и "Буду смотреть"
-        const container = target.closest('.styles_button__bW_ew')?.parentElement;
-        if (container) {
-            const newBtnWrap = document.createElement('div');
-            newBtnWrap.className = 'styles_button__bW_ew';
-            newBtnWrap.appendChild(btn);
-            container.appendChild(newBtnWrap);
+        // Вставляем рядом с найденной кнопкой
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'contents';
+        wrapper.appendChild(btn);
+
+        const btnContainer = target.closest('[class*="button"]') || target.parentElement;
+        if (btnContainer) {
+            btnContainer.appendChild(wrapper);
         } else {
-            target.parentElement?.appendChild(btn);
+            target.after(wrapper);
         }
 
         logger.info('Кнопка вставлена, ID:', id);

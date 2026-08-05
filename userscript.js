@@ -18,8 +18,8 @@
     const BUTTON_ID = "pirate-watch-btn";
 
     const logger = {
-        info: (...args) => console.info('[KP Helper]', ...args),
-        warn: (...args) => console.warn('[KP Helper]', ...args),
+        info: (...args) => console.info('[Kinopoisk Unlock]', ...args),
+        warn: (...args) => console.warn('[Kinopoisk Unlock]', ...args),
     };
 
     /**

@@ -5,8 +5,9 @@ Tampermonkey-скрипт для бесплатного просмотра фи�
 ## Установка
 
 1. Установите [Tampermonkey](https://www.tampermonkey.net/)
-2. Откройте `userscript.js` или установите через Raw-ссылку
-3. Скрипт активируется автоматически на страницах kinopoisk.ru
+2. Перейдите по [прямой ссылке на скрипт](https://github.com/TaronJar/kinopoisk-unlock/raw/main/userscript.js)
+3. Tampermonkey предложит установить — нажмите "Установить"
+4. Готово — кнопка появится на страницах фильмов
 
 ## Как работает
 

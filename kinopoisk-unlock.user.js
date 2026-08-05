@@ -38,25 +38,6 @@
     }
 
     /**
-     * Извлекает название из og:title
-     */
-    function extractTitle() {
-        try {
-            const el = document.querySelector('meta[property="og:title"]') ||
-                       document.querySelector('meta[name="twitter:title"]');
-            if (!el) return null;
-
-            const title = el.content?.trim();
-            if (!title) return null;
-            if (title.startsWith('Кинопоиск.')) return null;
-
-            return title;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    /**
      * Извлекает ID фильма из URL или __NEXT_DATA__ (для HD-версии)
      */
     function extractKinopoiskId() {
@@ -109,9 +90,6 @@
 
         // Если кнопка уже есть и URL не менялся — пропускаем
         if (url === previousUrl && document.getElementById(BUTTON_ID)) return;
-
-        const title = extractTitle();
-        if (!title) return;
 
         previousUrl = url;
 
@@ -196,7 +174,7 @@
             target.parentElement?.appendChild(btn);
         }
 
-        logger.info('Кнопка вставлена:', title, 'ID:', id);
+        logger.info('Кнопка вставлена, ID:', id);
     }
 
     // MutationObserver — следим за изменениями DOM

@@ -130,8 +130,8 @@
             padding: '0 22px',
             height: '52px',
             marginLeft: '12px',
-            backgroundColor: 'rgba(0,0,0,0.05)',
-            color: '#000',
+            backgroundColor: '#ff5c00',
+            color: '#fff',
             border: 'none',
             borderRadius: '52px',
             cursor: 'pointer',
@@ -148,11 +148,11 @@
         });
 
         btn.onmouseover = () => {
-            btn.style.backgroundColor = 'rgba(0,0,0,0.1)';
+            btn.style.backgroundColor = '#e05200';
             btn.style.transform = 'scale(1.05)';
         };
         btn.onmouseout = () => {
-            btn.style.backgroundColor = 'rgba(0,0,0,0.05)';
+            btn.style.backgroundColor = '#ff5c00';
             btn.style.transform = 'scale(1)';
         };
 

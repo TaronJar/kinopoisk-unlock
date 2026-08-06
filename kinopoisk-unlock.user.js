@@ -137,7 +137,6 @@
             cursor: 'pointer',
             fontWeight: '600',
             fontSize: '1.6rem',
-            lineHeight: '1.8rem',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             transition: 'background 0.2s ease, transform 0.2s ease',
             lineHeight: '1',

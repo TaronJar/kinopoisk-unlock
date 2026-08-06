@@ -159,7 +159,12 @@
 
         btn.onclick = () => {
             const url = new URL(location.href);
-            url.hostname = PIRATE_DOMAIN;
+            // Для HD версии используем hd.kinopoisk.cam
+            if (location.hostname === 'hd.kinopoisk.ru') {
+                url.hostname = 'hd.' + PIRATE_DOMAIN;
+            } else {
+                url.hostname = PIRATE_DOMAIN;
+            }
             window.open(url, '_blank');
         };
 

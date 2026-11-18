@@ -1,0 +1,22 @@
+name: Validate userscript
+
+on:
+  push:
+    branches:
+      - main
+      - feature/v3-ui-and-reliability
+  pull_request:
+
+jobs:
+  syntax:
+    name: JavaScript syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check userscript syntax
+        run: node --check kinopoisk-unlock.user.js

@@ -25,8 +25,8 @@
         supportedPath: /^\/(?:film|series|anime|media)\/([^/?#]+)\/?/i,
         classicId: /^\d+$/,
         hdId: /^[a-f0-9]{20,32}$/i,
-        buttonLabel: 'Смотреть',
-        buttonTitle: 'Открыть страницу на Kinopoisk Unlock'
+        buttonLabel: 'Смотреть бесплатно',
+        buttonTitle: 'Открыть на Kinopoisk Unlock'
     });
 
     const SELECTORS = [
@@ -36,7 +36,6 @@
         '.styles_buttons__IoJ0k button[aria-label="Буду смотреть"]'
     ];
 
-    let lastPageKey = '';
     let frameRequested = false;
 
     const logger = {
@@ -233,8 +232,7 @@
 
         if (!page) {
             removeButton();
-            lastPageKey = '';
-            return;
+                return;
         }
 
         if (existingButton && existingButton.dataset.pageKey !== page.pageKey) {
@@ -244,26 +242,22 @@
         const id = extractKinopoiskId(page);
         if (!id) {
             removeButton();
-            lastPageKey = page.pageKey;
             return;
         }
 
         const currentButton = document.getElementById(CONFIG.buttonId);
         if (currentButton && currentButton.isConnected && currentButton.dataset.pageKey === page.pageKey) {
-            lastPageKey = page.pageKey;
             return;
         }
 
         const target = findWatchButton();
         if (!target) {
-            lastPageKey = page.pageKey;
             return;
         }
 
         injectStyles();
         const button = createButton(page, id);
         target.insertAdjacentElement('afterend', button);
-        lastPageKey = page.pageKey;
 
         logger.info('Кнопка добавлена для страницы:', page.pageKey);
     }
@@ -286,7 +280,11 @@
             };
 
             wrapped.__kpUnlockWrapped = true;
-            history[method] = wrapped;
+            try {
+                history[method] = wrapped;
+            } catch (error) {
+                logger.warn('Не удалось подключить отслеживание ' + method + ':', error);
+            }
         }
 
         window.addEventListener('popstate', scheduleSync);

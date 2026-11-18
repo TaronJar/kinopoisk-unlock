@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.0.0
+// @version      3.1.0
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -26,7 +26,7 @@
         classicId: /^\d+$/,
         hdId: /^[a-f0-9]{20,32}$/i,
         buttonLabel: 'Смотреть',
-        buttonTitle: 'Открыть на Kino.vin'
+        buttonTitle: 'Смотреть'
     });
 
     const SELECTORS = [
@@ -119,101 +119,63 @@
     function injectStyles() {
         if (document.getElementById(CONFIG.styleId)) return;
 
+        // Оставляем оригинальные стили Кинопоиска. Добавляем только отступ
+        // и доступное состояние фокуса, не переопределяя форму, цвет и анимации.
         const style = document.createElement('style');
         style.id = CONFIG.styleId;
         style.textContent = [
             '#' + CONFIG.buttonId + ' {',
-            '  --kp-unlock-bg: #ff6a2b;',
-            '  --kp-unlock-bg-hover: #ff7d43;',
-            '  --kp-unlock-bg-active: #ed5520;',
-            '  appearance: none !important;',
-            '  position: relative !important;',
-            '  display: inline-flex !important;',
-            '  align-items: center !important;',
-            '  justify-content: center !important;',
-            '  gap: 9px !important;',
-            '  min-height: 44px !important;',
-            '  min-width: 142px !important;',
-            '  margin: 0 0 0 10px !important;',
-            '  padding: 0 18px !important;',
-            '  border: 1px solid rgba(255,255,255,.13) !important;',
-            '  border-radius: 999px !important;',
-            '  background: linear-gradient(135deg, var(--kp-unlock-bg), #f04b24) !important;',
-            '  box-shadow: 0 3px 10px rgba(240, 75, 36, .22), inset 0 1px 0 rgba(255,255,255,.18) !important;',
-            '  color: #fff !important;',
-            '  cursor: pointer !important;',
-            '  font: 650 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;',
-            '  letter-spacing: .01em !important;',
-            '  white-space: nowrap !important;',
-            '  text-decoration: none !important;',
-            '  user-select: none !important;',
-            '  -webkit-tap-highlight-color: transparent !important;',
-            '  transition: background .18s ease, box-shadow .18s ease, transform .18s ease, filter .18s ease !important;',
-            '}',
-            '#' + CONFIG.buttonId + ':hover {',
-            '  background: linear-gradient(135deg, var(--kp-unlock-bg-hover), #ff6335) !important;',
-            '  box-shadow: 0 6px 18px rgba(240, 75, 36, .3), inset 0 1px 0 rgba(255,255,255,.2) !important;',
-            '  filter: saturate(1.08) !important;',
-            '  transform: translateY(-1px) !important;',
-            '}',
-            '#' + CONFIG.buttonId + ':active {',
-            '  background: var(--kp-unlock-bg-active) !important;',
-            '  box-shadow: 0 2px 6px rgba(240, 75, 36, .22) !important;',
-            '  transform: translateY(0) scale(.985) !important;',
+            '  margin-inline-start: 10px !important;',
             '}',
             '#' + CONFIG.buttonId + ':focus-visible {',
-            '  outline: 3px solid rgba(255, 145, 90, .55) !important;',
+            '  outline: 2px solid currentColor !important;',
             '  outline-offset: 3px !important;',
-            '}',
-            '#' + CONFIG.buttonId + ' .kp-unlock-icon {',
-            '  display: block !important;',
-            '  width: 16px !important;',
-            '  height: 16px !important;',
-            '  flex: 0 0 16px !important;',
-            '  fill: currentColor !important;',
-            '}',
-            '@media (max-width: 640px) {',
-            '  #' + CONFIG.buttonId + ' { min-width: 44px !important; width: 44px !important; padding: 0 !important; gap: 0 !important; }',
-            '  #' + CONFIG.buttonId + ' .kp-unlock-label {',
-            '    position: absolute !important; width: 1px !important; height: 1px !important;',
-            '    padding: 0 !important; margin: -1px !important; overflow: hidden !important;',
-            '    clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;',
-            '  }',
-            '}',
-            '@media (prefers-reduced-motion: reduce) {',
-            '  #' + CONFIG.buttonId + ' { transition: none !important; }',
             '}'
-        ].join('\n');
+        ].join('\\n');
 
         (document.head || document.documentElement).appendChild(style);
     }
 
-    function createButton(page, id) {
-        const button = document.createElement('button');
+    function createButton(target, page, id) {
+        // Клонируем настоящую кнопку Кинопоиска: так сохраняются её CSS-классы,
+        // вложенная разметка, иконка, размеры, скругления и штатные анимации.
+        // cloneNode не переносит обработчики событий исходной кнопки.
+        const button = target.cloneNode(true);
+
         button.id = CONFIG.buttonId;
         button.type = 'button';
-        button.className = 'kp-unlock-button';
+        button.disabled = false;
+        button.removeAttribute('aria-pressed');
+        button.removeAttribute('aria-checked');
+        button.setAttribute('aria-label', CONFIG.buttonLabel);
+        button.title = CONFIG.buttonLabel;
         button.dataset.pageKey = page.pageKey;
         button.dataset.kinopoiskId = id;
-        button.title = CONFIG.buttonTitle;
-        button.setAttribute('aria-label', CONFIG.buttonTitle);
 
-        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        icon.setAttribute('viewBox', '0 0 24 24');
-        icon.setAttribute('aria-hidden', 'true');
-        icon.classList.add('kp-unlock-icon');
+        // Удаляем возможные дублирующиеся ID из скопированной внутренней разметки.
+        button.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
 
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', 'M8 5.8c0-.8.9-1.3 1.6-.9l9.1 5.2a1 1 0 0 1 0 1.8l-9.1 5.2c-.7.4-1.6-.1-1.6-.9V5.8Z');
-        icon.appendChild(path);
+        // Меняем только подпись, не трогая SVG и другие декоративные элементы.
+        const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+        let textNode;
+        let replaced = false;
+        while ((textNode = walker.nextNode())) {
+            if (textNode.nodeValue.trim()) {
+                textNode.nodeValue = textNode.nodeValue.replace('Буду смотреть', CONFIG.buttonLabel);
+                replaced = true;
+            }
+        }
 
-        const label = document.createElement('span');
-        label.className = 'kp-unlock-label';
-        label.textContent = CONFIG.buttonLabel;
+        if (!replaced) {
+            const label = document.createElement('span');
+            label.textContent = CONFIG.buttonLabel;
+            button.appendChild(label);
+        }
 
-        button.append(icon, label);
+        button.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
 
-        button.addEventListener('click', () => {
             const destination = new URL(location.href);
             destination.hostname = CONFIG.externalDomain;
 
@@ -256,7 +218,7 @@
         }
 
         injectStyles();
-        const button = createButton(page, id);
+        const button = createButton(target, page, id);
         target.insertAdjacentElement('afterend', button);
 
         logger.info('Кнопка добавлена для страницы:', page.pageKey);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.3.3
+// @version      3.3.4
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -224,41 +224,23 @@
         button.dataset.pageKey = page.pageKey;
         button.dataset.kinopoiskId = id;
 
-        button.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+        // Keep the site's outer button classes, but discard all copied inner
+        // content. The source on classic pages is a bookmark button, so
+        // retaining any of its children can leak the bookmark icon.
+        button.replaceChildren();
 
-        // Remove every copied text node first. This prevents the source
-        // button label and the free badge from being concatenated.
-        const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
-        const textNodes = [];
-        let textNode;
-        while ((textNode = walker.nextNode())) textNodes.push(textNode);
-        textNodes.forEach(node => node.remove());
+        const play = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        play.setAttribute('viewBox', '0 0 24 24');
+        play.setAttribute('width', '18');
+        play.setAttribute('height', '18');
+        play.setAttribute('aria-hidden', 'true');
+        play.style.flex = '0 0 auto';
 
-        // The fallback source on classic pages is "Буду смотреть", whose
-        // bookmark glyph is wrong for a watch action. Replace its SVG with play.
-        const icon = button.querySelector('svg');
-        if (icon) {
-            while (icon.firstChild) icon.removeChild(icon.firstChild);
-            icon.setAttribute('viewBox', '0 0 24 24');
-            icon.setAttribute('width', '18');
-            icon.setAttribute('height', '18');
-            icon.setAttribute('aria-hidden', 'true');
-            const play = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            play.setAttribute('d', 'M8 5v14l11-7z');
-            play.setAttribute('fill', 'currentColor');
-            icon.appendChild(play);
-        } else {
-            const play = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            play.setAttribute('viewBox', '0 0 24 24');
-            play.setAttribute('width', '18');
-            play.setAttribute('height', '18');
-            play.setAttribute('aria-hidden', 'true');
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', 'M8 5v14l11-7z');
-            path.setAttribute('fill', 'currentColor');
-            play.appendChild(path);
-            button.appendChild(play);
-        }
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M8 5v14l11-7z');
+        path.setAttribute('fill', 'currentColor');
+        play.appendChild(path);
+        button.appendChild(play);
 
         const label = document.createElement('span');
         label.textContent = 'Смотреть';

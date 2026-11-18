@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.3.8
+// @version      3.3.9
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -160,6 +160,11 @@
         const style = document.createElement('style');
         style.id = CONFIG.styleId;
         style.textContent = [
+            '#' + CONFIG.buttonId + '::before,',
+            '#' + CONFIG.buttonId + '::after {',
+            '  content: none !important;',
+            '  display: none !important;',
+            '}',
             '#' + CONFIG.buttonId + ' .kp-unlock-free-badge {',
             '  display: inline-flex !important;',
             '  align-items: center !important;',
@@ -268,6 +273,8 @@
         button.style.flexWrap = 'nowrap';
         button.style.whiteSpace = 'nowrap';
         button.style.maxWidth = '100%';
+        button.style.justifyContent = 'center';
+        button.style.boxSizing = 'border-box';
 
         button.addEventListener('click', event => {
             event.preventDefault();
@@ -324,6 +331,12 @@
         const button = createButton(template, page, id);
         applyContextSpacing(button, anchor, placement);
         insertionTarget.insertAdjacentElement('afterend', button);
+
+        if (placement === 'below') {
+            // Match the native "Буду смотреть" control's outer width.
+            const anchorWidth = Math.round(anchor.getBoundingClientRect().width);
+            if (anchorWidth > 0) button.style.width = anchorWidth + 'px';
+        }
 
         logger.info('Кнопка добавлена в основную группу действий:', page.pageKey);
     }

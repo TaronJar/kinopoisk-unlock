@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.4.1
+// @version      3.4.2
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -136,7 +136,7 @@
             const anchor = trailer && trailer.parentElement === primary.parentElement
                 ? trailer
                 : primary;
-            return { anchor, template: primary };
+            return { anchor, template: primary, placement: 'below' };
         }
 
         // Резерв для старого интерфейса, где основным действием является

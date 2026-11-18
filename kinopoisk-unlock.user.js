@@ -131,7 +131,7 @@
             '  outline: 2px solid currentColor !important;',
             '  outline-offset: 3px !important;',
             '}'
-        ].join('\\n');
+        ].join('\n');
 
         (document.head || document.documentElement).appendChild(style);
     }

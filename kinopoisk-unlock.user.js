@@ -75,7 +75,10 @@
                     item.id !== null
                 );
 
-                if (entity) return String(entity.id);
+                if (entity && (typeof entity.id === 'string' || typeof entity.id === 'number')) {
+                    const id = String(entity.id).trim();
+                    if (id && id.length <= 128) return id;
+                }
             } catch (error) {
                 logger.warn('Не удалось прочитать ID из __NEXT_DATA__:', error);
             }
@@ -90,8 +93,7 @@
         if (!page) return null;
 
         if (page.host === 'hd.kinopoisk.ru') {
-            const id = extractHdId();
-            return id && CONFIG.hdId.test(id) ? id : null;
+            return extractHdId();
         }
 
         return CONFIG.classicId.test(page.routeId) ? page.routeId : null;

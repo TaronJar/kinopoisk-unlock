@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.3.7
+// @version      3.3.8
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -236,18 +236,8 @@
         // retaining any of its children can leak the bookmark icon.
         button.replaceChildren();
 
-        const play = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        play.setAttribute('viewBox', '0 0 24 24');
-        play.setAttribute('width', '18');
-        play.setAttribute('height', '18');
-        play.setAttribute('aria-hidden', 'true');
-        play.style.flex = '0 0 auto';
-
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', 'M8 5v14l11-7z');
-        path.setAttribute('fill', 'currentColor');
-        play.appendChild(path);
-        button.appendChild(play);
+        // No play icon: keep the shortcut compact so its width aligns
+        // more closely with the neighboring native action button.
 
         const label = document.createElement('span');
         label.textContent = 'Смотреть';

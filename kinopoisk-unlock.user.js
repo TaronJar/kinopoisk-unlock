@@ -119,21 +119,47 @@
     function injectStyles() {
         if (document.getElementById(CONFIG.styleId)) return;
 
-        // Оставляем оригинальные стили Кинопоиска. Добавляем только отступ
-        // и доступное состояние фокуса, не переопределяя форму, цвет и анимации.
+        // Визуальный стиль самой кнопки остаётся полностью штатным.
         const style = document.createElement('style');
         style.id = CONFIG.styleId;
         style.textContent = [
-            '#' + CONFIG.buttonId + ' {',
-            '  margin-inline-start: 10px !important;',
-            '}',
             '#' + CONFIG.buttonId + ':focus-visible {',
             '  outline: 2px solid currentColor !important;',
             '  outline-offset: 3px !important;',
             '}'
-        ].join('\n');
+        ].join('\\n');
 
         (document.head || document.documentElement).appendChild(style);
+    }
+
+    function applyContextSpacing(button, target) {
+        const parent = target.parentElement;
+        if (!parent) return;
+
+        const layout = getComputedStyle(parent);
+        const display = layout.display;
+        const isFlex = display === 'flex' || display === 'inline-flex';
+        const isGrid = display === 'grid' || display === 'inline-grid';
+
+        // Если контейнер уже задаёт gap, не добавляем второй отступ.
+        const columnGap = Number.parseFloat(layout.columnGap) || 0;
+        const rowGap = Number.parseFloat(layout.rowGap) || 0;
+        if ((isFlex && layout.flexDirection.startsWith('column') && rowGap > 0) ||
+            ((isFlex && !layout.flexDirection.startsWith('column')) && columnGap > 0) ||
+            (isGrid && (columnGap > 0 || rowGap > 0))) {
+            button.style.margin = '0';
+            return;
+        }
+
+        // Для вертикального списка используем вертикальный отступ,
+        // для горизонтального ряда или обычного потока — горизонтальный.
+        if (isFlex && layout.flexDirection.startsWith('column')) {
+            button.style.marginBlockStart = '8px';
+            button.style.marginInlineStart = '0';
+        } else {
+            button.style.marginInlineStart = '8px';
+            button.style.marginBlockStart = '0';
+        }
     }
 
     function createButton(target, page, id) {
@@ -190,13 +216,12 @@
         frameRequested = false;
 
         const page = getPage();
-        const existingButton = document.getElementById(CONFIG.buttonId);
-
         if (!page) {
             removeButton();
-                return;
+            return;
         }
 
+        const existingButton = document.getElementById(CONFIG.buttonId);
         if (existingButton && existingButton.dataset.pageKey !== page.pageKey) {
             existingButton.remove();
         }
@@ -207,21 +232,31 @@
             return;
         }
 
-        const currentButton = document.getElementById(CONFIG.buttonId);
-        if (currentButton && currentButton.isConnected && currentButton.dataset.pageKey === page.pageKey) {
-            return;
-        }
-
         const target = findWatchButton();
         if (!target) {
             return;
         }
 
+        const currentButton = document.getElementById(CONFIG.buttonId);
+        if (currentButton && currentButton.isConnected &&
+            currentButton.dataset.pageKey === page.pageKey &&
+            currentButton.previousElementSibling === target) {
+            // Кнопка уже стоит рядом с актуальной штатной кнопкой.
+            applyContextSpacing(currentButton, target);
+            return;
+        }
+
+        // На разных типах страниц Кинопоиск использует разные контейнеры.
+        // Если исходная кнопка переместилась или была перерисована, пересоздаём
+        // нашу рядом с актуальной кнопкой, а не оставляем в старом месте.
+        currentButton?.remove();
+
         injectStyles();
         const button = createButton(target, page, id);
+        applyContextSpacing(button, target);
         target.insertAdjacentElement('afterend', button);
 
-        logger.info('Кнопка добавлена для страницы:', page.pageKey);
+        logger.info('Кнопка добавлена рядом с действием Кинопоиска:', page.pageKey);
     }
 
     function scheduleSync() {

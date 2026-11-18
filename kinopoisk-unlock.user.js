@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.2.0
+// @version      3.3.0
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -152,6 +152,18 @@
         const style = document.createElement('style');
         style.id = CONFIG.styleId;
         style.textContent = [
+            '#' + CONFIG.buttonId + ' .kp-unlock-free-badge {',
+            '  display: inline-flex !important;',
+            '  align-items: center !important;',
+            '  margin-inline-start: 2px !important;',
+            '  padding: 3px 5px !important;',
+            '  border-radius: 5px !important;',
+            '  background: rgba(0, 0, 0, .18) !important;',
+            '  color: #fff !important;',
+            '  font: 750 9px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;',
+            '  letter-spacing: .035em !important;',
+            '  white-space: nowrap !important;',
+            '}',
             '#' + CONFIG.buttonId + ':focus-visible {',
             '  outline: 2px solid currentColor !important;',
             '  outline-offset: 3px !important;',
@@ -226,6 +238,12 @@
             label.textContent = CONFIG.buttonLabel;
             button.appendChild(label);
         }
+
+        const freeBadge = document.createElement('span');
+        freeBadge.className = 'kp-unlock-free-badge';
+        freeBadge.textContent = 'БЕСПЛАТНО';
+        freeBadge.setAttribute('aria-hidden', 'true');
+        button.appendChild(freeBadge);
 
         button.addEventListener('click', event => {
             event.preventDefault();

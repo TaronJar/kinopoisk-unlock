@@ -20,13 +20,13 @@
     const CONFIG = Object.freeze({
         buttonId: 'kp-unlock-watch-button',
         styleId: 'kp-unlock-styles',
-        externalDomain: 'kinopoisk.cam',
+        externalDomain: 'kino.vin',
         supportedHosts: new Set(['www.kinopoisk.ru', 'hd.kinopoisk.ru']),
         supportedPath: /^\/(?:film|series|anime|media)\/([^/?#]+)\/?/i,
         classicId: /^\d+$/,
         hdId: /^[a-f0-9]{20,32}$/i,
-        buttonLabel: 'Смотреть бесплатно',
-        buttonTitle: 'Открыть на Kinopoisk Unlock'
+        buttonLabel: 'Смотреть',
+        buttonTitle: 'Открыть на Kino.vin'
     });
 
     const SELECTORS = [

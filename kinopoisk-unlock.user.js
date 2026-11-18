@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.1.0
+// @version      3.2.0
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -25,8 +25,8 @@
         supportedPath: /^\/(?:film|series|anime|media)\/([^/?#]+)\/?/i,
         classicId: /^\d+$/,
         hdId: /^[a-f0-9]{20,32}$/i,
-        buttonLabel: 'Смотреть',
-        buttonTitle: 'Смотреть'
+        buttonLabel: 'Смотреть бесплатно',
+        buttonTitle: 'Смотреть бесплатно'
     });
 
     const SELECTORS = [

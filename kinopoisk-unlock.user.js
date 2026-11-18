@@ -112,7 +112,7 @@
 
     function findActionButtons() {
         const buttons = Array.from(document.querySelectorAll('button'))
-            .filter(button => button.isConnected && button.getClientRects().length);
+            .filter(button => button.id !== CONFIG.buttonId && button.isConnected && button.getClientRects().length);
 
         const primary = buttons.find(button => {
             const text = getButtonText(button);

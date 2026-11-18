@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.3.1
+// @version      3.3.2
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -107,7 +107,7 @@
         return (button.getAttribute('aria-label') ||
             button.getAttribute('title') ||
             button.textContent ||
-            '').replace(/\\s+/g, ' ').trim().toLocaleLowerCase('ru');
+            '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('ru');
     }
 
     function findActionButtons() {
@@ -204,9 +204,6 @@
     }
 
     function createButton(template, page, id) {
-        // Клонируем настоящую кнопку Кинопоиска: так сохраняются её CSS-классы,
-        // вложенная разметка, иконка, размеры, скругления и штатные анимации.
-        // cloneNode не переносит обработчики событий исходной кнопки.
         const button = template.cloneNode(true);
 
         button.id = CONFIG.buttonId;
@@ -214,37 +211,56 @@
         button.disabled = false;
         button.removeAttribute('aria-pressed');
         button.removeAttribute('aria-checked');
-        button.setAttribute('aria-label', CONFIG.buttonLabel);
-        button.title = CONFIG.buttonLabel;
+        button.setAttribute('aria-label', 'Смотреть бесплатно');
+        button.title = 'Смотреть бесплатно';
         button.dataset.pageKey = page.pageKey;
         button.dataset.kinopoiskId = id;
 
-        // Удаляем возможные дублирующиеся ID из скопированной внутренней разметки.
         button.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
 
-        // Меняем только подпись, не трогая SVG и другие декоративные элементы.
+        // Remove every copied text node first. This prevents the source
+        // button label and the free badge from being concatenated.
         const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+        const textNodes = [];
         let textNode;
-        let replaced = false;
-        while ((textNode = walker.nextNode())) {
-            if (textNode.nodeValue.trim()) {
-                textNode.nodeValue = textNode.nodeValue.replace(/Буду смотреть|Смотреть сериал|Смотреть фильм|Трейлер/gi, CONFIG.buttonLabel);
-                replaced = true;
-            }
+        while ((textNode = walker.nextNode())) textNodes.push(textNode);
+        textNodes.forEach(node => node.remove());
+
+        // The fallback source on classic pages is "Буду смотреть", whose
+        // bookmark glyph is wrong for a watch action. Replace its SVG with play.
+        const icon = button.querySelector('svg');
+        if (icon) {
+            while (icon.firstChild) icon.removeChild(icon.firstChild);
+            icon.setAttribute('viewBox', '0 0 24 24');
+            icon.setAttribute('width', '18');
+            icon.setAttribute('height', '18');
+            icon.setAttribute('aria-hidden', 'true');
+            const play = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            play.setAttribute('d', 'M8 5v14l11-7z');
+            play.setAttribute('fill', 'currentColor');
+            icon.appendChild(play);
+        } else {
+            const play = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            play.setAttribute('viewBox', '0 0 24 24');
+            play.setAttribute('width', '18');
+            play.setAttribute('height', '18');
+            play.setAttribute('aria-hidden', 'true');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M8 5v14l11-7z');
+            path.setAttribute('fill', 'currentColor');
+            play.appendChild(path);
+            button.appendChild(play);
         }
 
-        if (!replaced) {
-            const label = document.createElement('span');
-            label.textContent = CONFIG.buttonLabel;
-            button.appendChild(label);
-        }
+        const label = document.createElement('span');
+        label.textContent = 'Смотреть';
+        label.style.whiteSpace = 'nowrap';
+        button.appendChild(label);
 
         const freeBadge = document.createElement('span');
         freeBadge.className = 'kp-unlock-free-badge';
         freeBadge.textContent = 'БЕСПЛАТНО';
         freeBadge.setAttribute('aria-hidden', 'true');
-        // Inline styles keep the badge readable even if the site's CSS
-        // overrides injected stylesheet rules.
         Object.assign(freeBadge.style, {
             display: 'inline-flex',
             alignItems: 'center',
@@ -260,14 +276,17 @@
         });
         button.appendChild(freeBadge);
 
+        button.style.display = 'inline-flex';
+        button.style.alignItems = 'center';
+        button.style.flexWrap = 'nowrap';
+        button.style.whiteSpace = 'nowrap';
+        button.style.maxWidth = '100%';
+
         button.addEventListener('click', event => {
             event.preventDefault();
             event.stopPropagation();
-
             const destination = new URL(location.href);
             destination.hostname = CONFIG.externalDomain;
-
-            // Открываем только заранее заданный домен назначения.
             window.open(destination.href, '_blank', 'noopener,noreferrer');
         });
 

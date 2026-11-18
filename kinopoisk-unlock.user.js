@@ -103,17 +103,46 @@
         document.getElementById(CONFIG.buttonId)?.remove();
     }
 
-    function findWatchButton() {
-        for (const selector of SELECTORS) {
-            const button = document.querySelector(selector);
-            if (button) return button;
+    function getButtonText(button) {
+        return (button.getAttribute('aria-label') ||
+            button.getAttribute('title') ||
+            button.textContent ||
+            '').replace(/\\s+/g, ' ').trim().toLocaleLowerCase('ru');
+    }
+
+    function findActionButtons() {
+        const buttons = Array.from(document.querySelectorAll('button'))
+            .filter(button => button.isConnected && button.getClientRects().length);
+
+        const primary = buttons.find(button => {
+            const text = getButtonText(button);
+            return /^(смотреть (?:сериал|фильм)|смотреть)$/.test(text);
+        });
+
+        const trailer = buttons.find(button => getButtonText(button) === 'трейлер');
+
+        // На HD-страницах сначала располагаются основные действия:
+        // большая кнопка просмотра и «Трейлер». Вставляемся после трейлера,
+        // но копируем оформление большой кнопки просмотра.
+        if (primary) {
+            const anchor = trailer && trailer.parentElement === primary.parentElement
+                ? trailer
+                : primary;
+            return { anchor, template: primary };
         }
 
-        // Текстовый fallback оставлен на случай изменения атрибутов кнопки.
-        return Array.from(document.querySelectorAll('button')).find(button => {
-            const text = (button.textContent || '').replace(/\s+/g, ' ').trim();
-            return text === 'Буду смотреть';
-        }) || null;
+        // Резерв для старого интерфейса, где основным действием является
+        // «Буду смотреть». Не используем закладку как основной шаблон,
+        // если на странице уже найдена CTA-кнопка просмотра.
+        for (const selector of SELECTORS) {
+            const button = document.querySelector(selector);
+            if (button && button.getClientRects().length) {
+                return { anchor: button, template: button };
+            }
+        }
+
+        const fallback = buttons.find(button => getButtonText(button) === 'буду смотреть');
+        return fallback ? { anchor: fallback, template: fallback } : null;
     }
 
     function injectStyles() {
@@ -162,11 +191,11 @@
         }
     }
 
-    function createButton(target, page, id) {
+    function createButton(template, page, id) {
         // Клонируем настоящую кнопку Кинопоиска: так сохраняются её CSS-классы,
         // вложенная разметка, иконка, размеры, скругления и штатные анимации.
         // cloneNode не переносит обработчики событий исходной кнопки.
-        const button = target.cloneNode(true);
+        const button = template.cloneNode(true);
 
         button.id = CONFIG.buttonId;
         button.type = 'button';
@@ -187,7 +216,7 @@
         let replaced = false;
         while ((textNode = walker.nextNode())) {
             if (textNode.nodeValue.trim()) {
-                textNode.nodeValue = textNode.nodeValue.replace('Буду смотреть', CONFIG.buttonLabel);
+                textNode.nodeValue = textNode.nodeValue.replace(/Буду смотреть|Смотреть сериал|Смотреть фильм|Трейлер/gi, CONFIG.buttonLabel);
                 replaced = true;
             }
         }
@@ -232,31 +261,30 @@
             return;
         }
 
-        const target = findWatchButton();
-        if (!target) {
-            return;
-        }
+        const actions = findActionButtons();
+        if (!actions) return;
 
+        const { anchor, template } = actions;
         const currentButton = document.getElementById(CONFIG.buttonId);
+
         if (currentButton && currentButton.isConnected &&
             currentButton.dataset.pageKey === page.pageKey &&
-            currentButton.previousElementSibling === target) {
-            // Кнопка уже стоит рядом с актуальной штатной кнопкой.
-            applyContextSpacing(currentButton, target);
+            currentButton.previousElementSibling === anchor) {
+            applyContextSpacing(currentButton, anchor);
             return;
         }
 
-        // На разных типах страниц Кинопоиск использует разные контейнеры.
-        // Если исходная кнопка переместилась или была перерисована, пересоздаём
-        // нашу рядом с актуальной кнопкой, а не оставляем в старом месте.
+        // Если Kinopoisk переставил или перерисовал блок действий,
+        // переносим нашу кнопку к новой группе. Шаблон и место вставки
+        // выбираются отдельно: внешний вид берём у CTA, позицию — после трейлера.
         currentButton?.remove();
 
         injectStyles();
-        const button = createButton(target, page, id);
-        applyContextSpacing(button, target);
-        target.insertAdjacentElement('afterend', button);
+        const button = createButton(template, page, id);
+        applyContextSpacing(button, anchor);
+        anchor.insertAdjacentElement('afterend', button);
 
-        logger.info('Кнопка добавлена рядом с действием Кинопоиска:', page.pageKey);
+        logger.info('Кнопка добавлена в основную группу действий:', page.pageKey);
     }
 
     function scheduleSync() {

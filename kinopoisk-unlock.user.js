@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.3.9
+// @version      3.4.0
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -145,7 +145,7 @@
         for (const selector of SELECTORS) {
             const button = document.querySelector(selector);
             if (button && button.getClientRects().length) {
-                return { anchor: button, template: button, placement: 'below' };
+                return { anchor: button, template: null, placement: 'below' };
             }
         }
 
@@ -224,7 +224,7 @@
     }
 
     function createButton(template, page, id) {
-        const button = template.cloneNode(true);
+        const button = template ? template.cloneNode(true) : document.createElement('button');
 
         button.id = CONFIG.buttonId;
         button.type = 'button';
@@ -275,6 +275,24 @@
         button.style.maxWidth = '100%';
         button.style.justifyContent = 'center';
         button.style.boxSizing = 'border-box';
+
+        if (!template) {
+            // Ticket-only film pages have no native watch CTA. Build a pill
+            // instead of cloning the circular bookmark control.
+            Object.assign(button.style, {
+                appearance: 'none',
+                width: 'max-content',
+                minWidth: '0',
+                minHeight: '48px',
+                padding: '0 20px',
+                border: '0',
+                borderRadius: '999px',
+                background: '#292929',
+                color: '#fff',
+                font: '600 16px/1.2 Arial, sans-serif',
+                cursor: 'pointer'
+            });
+        }
 
         button.addEventListener('click', event => {
             event.preventDefault();
@@ -332,7 +350,7 @@
         applyContextSpacing(button, anchor, placement);
         insertionTarget.insertAdjacentElement('afterend', button);
 
-        if (placement === 'below') {
+        if (placement === 'below' && template) {
             // Match the native "Буду смотреть" control's outer width.
             const anchorWidth = Math.round(anchor.getBoundingClientRect().width);
             if (anchorWidth > 0) button.style.width = anchorWidth + 'px';

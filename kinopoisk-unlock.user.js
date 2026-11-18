@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.3.2
+// @version      3.3.3
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -47,13 +47,20 @@
         if (!CONFIG.supportedHosts.has(location.hostname)) return null;
 
         const match = location.pathname.match(CONFIG.supportedPath);
-        if (!match) return null;
+        const redirectId = location.hostname === 'hd.kinopoisk.ru'
+            ? new URLSearchParams(location.search).get('rt')
+            : null;
+
+        // HD-Кинопоиск иногда открывает карточку фильма/сериала через
+        // корневой URL с параметром rt вместо /film/<id>.
+        const routeId = match?.[1] || redirectId;
+        if (!routeId) return null;
 
         return {
             host: location.hostname,
             pathname: location.pathname,
-            pageKey: location.origin + location.pathname,
-            routeId: match[1]
+            pageKey: location.origin + location.pathname + location.search,
+            routeId
         };
     }
 
@@ -93,6 +100,7 @@
         if (!page) return null;
 
         if (page.host === 'hd.kinopoisk.ru') {
+            if (CONFIG.hdId.test(page.routeId)) return page.routeId;
             return extractHdId();
         }
 

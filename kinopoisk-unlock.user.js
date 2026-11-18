@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
-// @namespace    kinopoisk-unlock
-// @version      2.3
-// @description  Смотрите фильмы бесплатно.
+// @namespace    https://github.com/TaronJar/kinopoisk-unlock
+// @version      3.0.0
+// @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
 // @match        https://hd.kinopoisk.ru/*
@@ -17,173 +17,295 @@
 (function () {
     'use strict';
 
-    const PIRATE_DOMAIN = "kinopoisk.cam";
-    const BUTTON_ID = "pirate-watch-btn";
+    const CONFIG = Object.freeze({
+        buttonId: 'kp-unlock-watch-button',
+        styleId: 'kp-unlock-styles',
+        externalDomain: 'kinopoisk.cam',
+        supportedHosts: new Set(['www.kinopoisk.ru', 'hd.kinopoisk.ru']),
+        supportedPath: /^\/(?:film|series|anime|media)\/([^/?#]+)\/?/i,
+        classicId: /^\d+$/,
+        hdId: /^[a-f0-9]{20,32}$/i,
+        buttonLabel: 'Смотреть',
+        buttonTitle: 'Открыть страницу на Kinopoisk Unlock'
+    });
 
-    // Матчер — ловит film, series, anime и другие страницы с ID
-    const KINOPOISK_MATCHER = /kinopoisk\.ru\/(film|series|anime|media|person)\/.*/;
+    const SELECTORS = [
+        '[data-tid="ContentActions"] button[title="Буду смотреть"]',
+        '[data-tid="ContentActions"] button[aria-label="Буду смотреть"]',
+        '.styles_buttons__IoJ0k button[title="Буду смотреть"]',
+        '.styles_buttons__IoJ0k button[aria-label="Буду смотреть"]'
+    ];
 
-    let previousUrl = '';
+    let lastPageKey = '';
+    let frameRequested = false;
 
     const logger = {
         info: (...args) => console.info('[Kinopoisk Unlock]', ...args),
-        warn: (...args) => console.warn('[Kinopoisk Unlock]', ...args),
+        warn: (...args) => console.warn('[Kinopoisk Unlock]', ...args)
     };
 
-    /**
-     * Получает текущий URL без параметров и хеша
-     */
-    function getCurrentURL() {
-        return location.origin + location.pathname;
+    function getPage() {
+        if (!CONFIG.supportedHosts.has(location.hostname)) return null;
+
+        const match = location.pathname.match(CONFIG.supportedPath);
+        if (!match) return null;
+
+        return {
+            host: location.hostname,
+            pathname: location.pathname,
+            pageKey: location.origin + location.pathname,
+            routeId: match[1]
+        };
     }
 
-    /**
-     * Извлекает ID фильма из URL или __NEXT_DATA__ (для HD-версии)
-     */
-    function extractKinopoiskId() {
-        const url = getCurrentURL();
+    function extractHdId() {
+        const dataElement = document.getElementById('__NEXT_DATA__');
 
-        if (!url.match(KINOPOISK_MATCHER)) return null;
-
-        // Kinopoisk HD — ID в JSON-данных страницы
-        if (location.hostname === 'hd.kinopoisk.ru') {
+        if (dataElement) {
             try {
-                const el = document.getElementById('__NEXT_DATA__');
-                if (!el) return null;
-                const data = JSON.parse(el.innerText);
-                const apollo = Object.values(data?.props?.pageProps?.apolloState?.data || {});
-                const found = apollo.find(item =>
-                    item?.__typename === 'TvSeries' || item?.__typename === 'Film'
+                const data = JSON.parse(dataElement.textContent || '{}');
+                const apolloData = data?.props?.pageProps?.apolloState?.data;
+                const entities = apolloData && typeof apolloData === 'object'
+                    ? Object.values(apolloData)
+                    : [];
+
+                const entity = entities.find(item =>
+                    item &&
+                    (item.__typename === 'TvSeries' || item.__typename === 'Film') &&
+                    item.id !== undefined &&
+                    item.id !== null
                 );
-                if (found?.id) return String(found.id);
-            } catch (e) {
-                logger.warn('Не удалось извлечь ID из __NEXT_DATA__:', e);
+
+                if (entity) return String(entity.id);
+            } catch (error) {
+                logger.warn('Не удалось прочитать ID из __NEXT_DATA__:', error);
             }
-            // Фоллбэк — ID из URL (hex, 24 или 32 символа)
-            const hexMatch = url.match(/\/([a-f0-9]{20,32})/);
-            if (hexMatch) return hexMatch[1];
         }
 
-        // Обычный Кинопоиск — ID в URL: /film/12345/
-        const classicMatch = url.match(/\/(\d+)\//);
-        if (classicMatch) return classicMatch[1];
-
-        return null;
+        // Резервный вариант работает и тогда, когда __NEXT_DATA__ отсутствует.
+        const pathMatch = location.pathname.match(/\/([a-f0-9]{20,32})(?:\/|$)/i);
+        return pathMatch ? pathMatch[1] : null;
     }
 
-    /**
-     * Удаляет кнопку
-     */
+    function extractKinopoiskId(page) {
+        if (!page) return null;
+
+        if (page.host === 'hd.kinopoisk.ru') {
+            const id = extractHdId();
+            return id && CONFIG.hdId.test(id) ? id : null;
+        }
+
+        return CONFIG.classicId.test(page.routeId) ? page.routeId : null;
+    }
+
     function removeButton() {
-        document.getElementById(BUTTON_ID)?.remove();
+        document.getElementById(CONFIG.buttonId)?.remove();
     }
 
-    /**
-     * Вставляет кнопку рядом с "Буду смотреть"
-     */
-    function injectButton() {
-        const url = getCurrentURL();
-        const urlMatches = url.match(KINOPOISK_MATCHER);
-
-        // Убираем кнопку если не на странице фильма
-        if (!urlMatches) {
-            removeButton();
-            return;
+    function findWatchButton() {
+        for (const selector of SELECTORS) {
+            const button = document.querySelector(selector);
+            if (button) return button;
         }
 
-        // Если кнопка уже есть и URL не менялся — пропускаем
-        if (url === previousUrl && document.getElementById(BUTTON_ID)) return;
+        // Текстовый fallback оставлен на случай изменения атрибутов кнопки.
+        return Array.from(document.querySelectorAll('button')).find(button => {
+            const text = (button.textContent || '').replace(/\s+/g, ' ').trim();
+            return text === 'Буду смотреть';
+        }) || null;
+    }
 
-        previousUrl = url;
+    function injectStyles() {
+        if (document.getElementById(CONFIG.styleId)) return;
 
-        const id = extractKinopoiskId();
-        if (!id) {
-            removeButton();
-            return;
-        }
-        if (document.getElementById(BUTTON_ID)) return;
+        const style = document.createElement('style');
+        style.id = CONFIG.styleId;
+        style.textContent = [
+            '#' + CONFIG.buttonId + ' {',
+            '  --kp-unlock-bg: #ff6a2b;',
+            '  --kp-unlock-bg-hover: #ff7d43;',
+            '  --kp-unlock-bg-active: #ed5520;',
+            '  appearance: none !important;',
+            '  position: relative !important;',
+            '  display: inline-flex !important;',
+            '  align-items: center !important;',
+            '  justify-content: center !important;',
+            '  gap: 9px !important;',
+            '  min-height: 44px !important;',
+            '  min-width: 142px !important;',
+            '  margin: 0 0 0 10px !important;',
+            '  padding: 0 18px !important;',
+            '  border: 1px solid rgba(255,255,255,.13) !important;',
+            '  border-radius: 999px !important;',
+            '  background: linear-gradient(135deg, var(--kp-unlock-bg), #f04b24) !important;',
+            '  box-shadow: 0 3px 10px rgba(240, 75, 36, .22), inset 0 1px 0 rgba(255,255,255,.18) !important;',
+            '  color: #fff !important;',
+            '  cursor: pointer !important;',
+            '  font: 650 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;',
+            '  letter-spacing: .01em !important;',
+            '  white-space: nowrap !important;',
+            '  text-decoration: none !important;',
+            '  user-select: none !important;',
+            '  -webkit-tap-highlight-color: transparent !important;',
+            '  transition: background .18s ease, box-shadow .18s ease, transform .18s ease, filter .18s ease !important;',
+            '}',
+            '#' + CONFIG.buttonId + ':hover {',
+            '  background: linear-gradient(135deg, var(--kp-unlock-bg-hover), #ff6335) !important;',
+            '  box-shadow: 0 6px 18px rgba(240, 75, 36, .3), inset 0 1px 0 rgba(255,255,255,.2) !important;',
+            '  filter: saturate(1.08) !important;',
+            '  transform: translateY(-1px) !important;',
+            '}',
+            '#' + CONFIG.buttonId + ':active {',
+            '  background: var(--kp-unlock-bg-active) !important;',
+            '  box-shadow: 0 2px 6px rgba(240, 75, 36, .22) !important;',
+            '  transform: translateY(0) scale(.985) !important;',
+            '}',
+            '#' + CONFIG.buttonId + ':focus-visible {',
+            '  outline: 3px solid rgba(255, 145, 90, .55) !important;',
+            '  outline-offset: 3px !important;',
+            '}',
+            '#' + CONFIG.buttonId + ' .kp-unlock-icon {',
+            '  display: block !important;',
+            '  width: 16px !important;',
+            '  height: 16px !important;',
+            '  flex: 0 0 16px !important;',
+            '  fill: currentColor !important;',
+            '}',
+            '@media (max-width: 640px) {',
+            '  #' + CONFIG.buttonId + ' { min-width: 44px !important; width: 44px !important; padding: 0 !important; gap: 0 !important; }',
+            '  #' + CONFIG.buttonId + ' .kp-unlock-label {',
+            '    position: absolute !important; width: 1px !important; height: 1px !important;',
+            '    padding: 0 !important; margin: -1px !important; overflow: hidden !important;',
+            '    clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;',
+            '  }',
+            '}',
+            '@media (prefers-reduced-motion: reduce) {',
+            '  #' + CONFIG.buttonId + ' { transition: none !important; }',
+            '}'
+        ].join('\n');
 
-        // Ищем кнопку "Буду смотреть" по title, aria-label или тексту
-        const allButtons = document.querySelectorAll('button');
-        let target = null;
-        for (const b of allButtons) {
-            const btnTitle = b.getAttribute('title');
-            const ariaLabel = b.getAttribute('aria-label');
-            const text = b.textContent.replace(/\s+/g, ' ').trim();
-            if (btnTitle === 'Буду смотреть' || ariaLabel === 'Буду смотреть' || text === 'Буду смотреть') {
-                target = b;
-                break;
-            }
-        }
-        if (!target) return;
+        (document.head || document.documentElement).appendChild(style);
+    }
 
-        // Создаём кнопку в стиле Кинопоиска
-        const btn = document.createElement('button');
-        btn.id = BUTTON_ID;
-        btn.textContent = 'Смотреть бесплатно';
+    function createButton(page, id) {
+        const button = document.createElement('button');
+        button.id = CONFIG.buttonId;
+        button.type = 'button';
+        button.className = 'kp-unlock-button';
+        button.dataset.pageKey = page.pageKey;
+        button.dataset.kinopoiskId = id;
+        button.title = CONFIG.buttonTitle;
+        button.setAttribute('aria-label', CONFIG.buttonTitle);
 
-        Object.assign(btn.style, {
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            padding: '1.7rem 2.6rem',
-            height: '5.2rem',
-            marginLeft: '0.8rem',
-            backgroundColor: '#ff5c00',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '5.2rem',
-            cursor: 'pointer',
-            fontWeight: '600',
-            fontSize: '1.6rem',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            transition: 'background 0.2s ease, transform 0.2s ease',
-            lineHeight: '1',
-            whiteSpace: 'nowrap',
-            opacity: '1',
-            transform: 'translateY(0) scale(1)',
-            boxSizing: 'border-box',
-            outline: 'none',
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.classList.add('kp-unlock-icon');
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M8 5.8c0-.8.9-1.3 1.6-.9l9.1 5.2a1 1 0 0 1 0 1.8l-9.1 5.2c-.7.4-1.6-.1-1.6-.9V5.8Z');
+        icon.appendChild(path);
+
+        const label = document.createElement('span');
+        label.className = 'kp-unlock-label';
+        label.textContent = CONFIG.buttonLabel;
+
+        button.append(icon, label);
+
+        button.addEventListener('click', () => {
+            const destination = new URL(location.href);
+            destination.hostname = page.host === 'hd.kinopoisk.ru'
+                ? 'hd.' + CONFIG.externalDomain
+                : CONFIG.externalDomain;
+
+            // Открываем только заранее заданный домен назначения.
+            window.open(destination.href, '_blank', 'noopener,noreferrer');
         });
 
-        btn.onmouseover = () => {
-            btn.style.backgroundColor = '#e05200';
-            btn.style.transform = 'scale(1.05)';
-        };
-        btn.onmouseout = () => {
-            btn.style.backgroundColor = '#ff5c00';
-            btn.style.transform = 'scale(1)';
-        };
-
-        btn.onclick = () => {
-            const url = new URL(location.href);
-            // Для HD версии используем hd.kinopoisk.cam
-            if (location.hostname === 'hd.kinopoisk.ru') {
-                url.hostname = 'hd.' + PIRATE_DOMAIN;
-            } else {
-                url.hostname = PIRATE_DOMAIN;
-            }
-            window.open(url, '_blank');
-        };
-
-        // Вставляем внутрь контейнера кнопок
-        const buttonsContainer = document.querySelector('[data-tid="ContentActions"] .styles_buttons__IoJ0k') ||
-                                  target.closest('.styles_buttons__IoJ0k') ||
-                                  target.closest('[class*="buttons"]');
-        if (buttonsContainer) {
-            buttonsContainer.appendChild(btn);
-        } else {
-            target.after(btn);
-        }
-
-        logger.info('Кнопка вставлена, ID:', id);
+        return button;
     }
 
-    // MutationObserver — следим за изменениями DOM
-    const observer = new MutationObserver(() => injectButton());
-    observer.observe(document, { subtree: true, childList: true });
+    function syncButton() {
+        frameRequested = false;
 
-    // Первый запуск
-    injectButton();
+        const page = getPage();
+        const existingButton = document.getElementById(CONFIG.buttonId);
+
+        if (!page) {
+            removeButton();
+            lastPageKey = '';
+            return;
+        }
+
+        if (existingButton && existingButton.dataset.pageKey !== page.pageKey) {
+            existingButton.remove();
+        }
+
+        const id = extractKinopoiskId(page);
+        if (!id) {
+            removeButton();
+            lastPageKey = page.pageKey;
+            return;
+        }
+
+        const currentButton = document.getElementById(CONFIG.buttonId);
+        if (currentButton && currentButton.isConnected && currentButton.dataset.pageKey === page.pageKey) {
+            lastPageKey = page.pageKey;
+            return;
+        }
+
+        const target = findWatchButton();
+        if (!target) {
+            lastPageKey = page.pageKey;
+            return;
+        }
+
+        injectStyles();
+        const button = createButton(page, id);
+        target.insertAdjacentElement('afterend', button);
+        lastPageKey = page.pageKey;
+
+        logger.info('Кнопка добавлена для страницы:', page.pageKey);
+    }
+
+    function scheduleSync() {
+        if (frameRequested) return;
+        frameRequested = true;
+        requestAnimationFrame(syncButton);
+    }
+
+    function hookHistoryNavigation() {
+        for (const method of ['pushState', 'replaceState']) {
+            const original = history[method];
+            if (typeof original !== 'function' || original.__kpUnlockWrapped) continue;
+
+            const wrapped = function (...args) {
+                const result = original.apply(this, args);
+                window.dispatchEvent(new Event('kp-unlock:navigate'));
+                return result;
+            };
+
+            wrapped.__kpUnlockWrapped = true;
+            history[method] = wrapped;
+        }
+
+        window.addEventListener('popstate', scheduleSync);
+        window.addEventListener('kp-unlock:navigate', scheduleSync);
+    }
+
+    function observePage() {
+        const observer = new MutationObserver(scheduleSync);
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    function init() {
+        hookHistoryNavigation();
+        observePage();
+        scheduleSync();
+    }
+
+    init();
 })();

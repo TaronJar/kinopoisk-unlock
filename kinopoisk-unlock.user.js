@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.4.0
+// @version      3.4.1
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -150,7 +150,7 @@
         }
 
         const fallback = buttons.find(button => getButtonText(button) === 'буду смотреть');
-        return fallback ? { anchor: fallback, template: fallback, placement: 'below' } : null;
+        return fallback ? { anchor: fallback, template: null, placement: 'below' } : null;
     }
 
     function injectStyles() {

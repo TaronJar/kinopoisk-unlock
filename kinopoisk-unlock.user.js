@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.3.4
+// @version      3.3.5
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -220,7 +220,7 @@
         button.removeAttribute('aria-pressed');
         button.removeAttribute('aria-checked');
         button.setAttribute('aria-label', 'Смотреть бесплатно');
-        button.title = 'Смотреть бесплатно';
+        button.removeAttribute('title');
         button.dataset.pageKey = page.pageKey;
         button.dataset.kinopoiskId = id;
 

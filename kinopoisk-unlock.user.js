@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.3.5
+// @version      3.3.6
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -145,12 +145,12 @@
         for (const selector of SELECTORS) {
             const button = document.querySelector(selector);
             if (button && button.getClientRects().length) {
-                return { anchor: button, template: button };
+                return { anchor: button, template: button, placement: 'below' };
             }
         }
 
         const fallback = buttons.find(button => getButtonText(button) === 'буду смотреть');
-        return fallback ? { anchor: fallback, template: fallback } : null;
+        return fallback ? { anchor: fallback, template: fallback, placement: 'below' } : null;
     }
 
     function injectStyles() {
@@ -181,7 +181,14 @@
         (document.head || document.documentElement).appendChild(style);
     }
 
-    function applyContextSpacing(button, target) {
+    function applyContextSpacing(button, target, placement) {
+        if (placement === 'below') {
+            button.style.display = 'inline-flex';
+            button.style.margin = '12px 0 0 0';
+            button.style.position = 'relative';
+            button.style.inset = 'auto';
+            return;
+        }
         const parent = target.parentElement;
         if (!parent) return;
 
@@ -306,13 +313,15 @@
         const actions = findActionButtons();
         if (!actions) return;
 
-        const { anchor, template } = actions;
+        const { anchor, template, placement } = actions;
+        const insertionTarget = placement === 'below' ? anchor.parentElement : anchor;
+        if (!insertionTarget) return;
         const currentButton = document.getElementById(CONFIG.buttonId);
 
         if (currentButton && currentButton.isConnected &&
             currentButton.dataset.pageKey === page.pageKey &&
-            currentButton.previousElementSibling === anchor) {
-            applyContextSpacing(currentButton, anchor);
+            currentButton.previousElementSibling === insertionTarget) {
+            applyContextSpacing(currentButton, anchor, placement);
             return;
         }
 
@@ -323,8 +332,8 @@
 
         injectStyles();
         const button = createButton(template, page, id);
-        applyContextSpacing(button, anchor);
-        anchor.insertAdjacentElement('afterend', button);
+        applyContextSpacing(button, anchor, placement);
+        insertionTarget.insertAdjacentElement('afterend', button);
 
         logger.info('Кнопка добавлена в основную группу действий:', page.pageKey);
     }

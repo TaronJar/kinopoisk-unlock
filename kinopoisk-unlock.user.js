@@ -215,9 +215,7 @@
 
         button.addEventListener('click', () => {
             const destination = new URL(location.href);
-            destination.hostname = page.host === 'hd.kinopoisk.ru'
-                ? 'hd.' + CONFIG.externalDomain
-                : CONFIG.externalDomain;
+            destination.hostname = CONFIG.externalDomain;
 
             // Открываем только заранее заданный домен назначения.
             window.open(destination.href, '_blank', 'noopener,noreferrer');

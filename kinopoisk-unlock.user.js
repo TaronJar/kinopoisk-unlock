@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kinopoisk Unlock
 // @namespace    https://github.com/TaronJar/kinopoisk-unlock
-// @version      3.3.6
+// @version      3.3.7
 // @description  Удобная кнопка перехода со страниц Кинопоиска.
 // @author       TaronJar
 // @match        https://www.kinopoisk.ru/*
@@ -184,7 +184,7 @@
     function applyContextSpacing(button, target, placement) {
         if (placement === 'below') {
             button.style.display = 'inline-flex';
-            button.style.margin = '12px 0 0 0';
+            button.style.margin = '16px 0 0 0';
             button.style.position = 'relative';
             button.style.inset = 'auto';
             return;
